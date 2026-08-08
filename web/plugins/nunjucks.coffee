@@ -7,10 +7,11 @@ slugg = require 'slugg'
 {Environment, FileSystemLoader, Template} = require 'nunjucks'
 
 # Supported locales
-locales = ['en', 'de']
+locales = ['en', 'de', 'es']
 languages = [
     'English',
-    'Deutsch'
+    'Deutsch',
+    'Español'
 ]
 
 # Set up locale path and i18n settings
