@@ -259,14 +259,26 @@ module.exports = (env, done) ->
     env.registerGenerator 'contra', (contents, done) ->
         rv = {}
 
-        kjv = env.getFullBible()
         {bookNames} = require '../../scripts/common'
-        bookMap = {}
-        i = 0
-        for section in kjv.sections
-            for book in section.books
-                bookMap[bookNames[i].toLowerCase()] = book
-                i++
+
+        # Build a book lookup map per locale, so the same reference
+        # string (e.g. "Genesis 5:26-27", always in English regardless
+        # of page language) can pull verse text from the correct
+        # locale's Bible data file.
+        bookMaps = {}
+        buildBookMap = (lang) ->
+            return bookMaps[lang] if bookMaps[lang]
+            kjv = env.getFullBible(lang)
+            map = {}
+            i = 0
+            for section in kjv.sections
+                for book in section.books
+                    map[bookNames[i].toLowerCase()] = book
+                    i++
+            bookMaps[lang] = map
+            return map
+
+        bookMap = buildBookMap('en')
 
         env.hasRefGroups = (refs) ->
             refs not instanceof Array
@@ -294,7 +306,7 @@ module.exports = (env, done) ->
 
             return "http://www.biblegateway.com/passage/?search=#{bookName}+#{parts[2]}&amp;version=AKJV;NIV;NLT";
 
-        env.getVerses = (ref, context=0) ->
+        env.getVerses = (ref, context=0, lang='en') ->
             parts = /^(\d?\s?[a-z]+)[\s.:]*(\d*):?(\d*)[-]?(\d*)/i.exec ref
             
             if not parts
@@ -304,7 +316,8 @@ module.exports = (env, done) ->
             bookName = parts[1].toLowerCase()
             if bookName is 'psalm' then bookName = 'psalms'
 
-            book = bookMap[bookName]
+            localeBookMap = buildBookMap(lang)
+            book = localeBookMap[bookName]
 
             if not book
                 console.log "Bad book #{ref}"
@@ -346,26 +359,32 @@ module.exports = (env, done) ->
             
             return selected
 
-        contradictions = env.getContra()
-        #console.log contradictions
+        generateContraPages = (lang, contradictions) ->
+            suffix = if lang is 'en' then '' else "-#{lang}"
+            for own name, contraCategory of contradictions
+                for contra in contraCategory.contradictions
+                    meta =
+                        title: contra.desc.trim().replace /"/g, '&quot;'
+                        image: '/img/square.png'
+                        filename: "#{slugg(contra.desc)}-#{name}#{suffix}.html"
+                        template: 'contradiction.html'
+                        category: contraCategory
+                        contra: contra
+                        lang: lang
 
-        for own name, contraCategory of contradictions
-            for contra in contraCategory.contradictions
-                meta =
-                    title: contra.desc.trim().replace /"/g, '&quot;'
-                    image: '/img/square.png'
-                    filename: "#{slugg(contra.desc)}-#{name}.html"
-                    template: 'contradiction.html'
-                    category: contraCategory
-                    contra: contra
+                    page = new MarkdownPage {full: '', relative: ''}, meta, ''
 
-                #console.log contra.desc
-                #console.log meta.filename
+                    rv[meta.filename] = page
 
-                page = new MarkdownPage {full: '', relative: ''}, meta, ''
-
-                rv[meta.filename] = page
-                #break
+        # Generate contradiction pages for every locale that has
+        # translated contradiction data available (currently just
+        # 'es' via contra_es.json -- see env.getContra). Other
+        # locales without their own data file (e.g. 'de') fall back
+        # to the English contra.json inside env.getContra, matching
+        # the site's pre-existing behavior for those languages.
+        for lang in locales
+            contradictions = env.getContra(lang)
+            generateContraPages(lang, contradictions)
 
         done(null, rv)
 
