@@ -287,7 +287,8 @@ function renderContra() {
     chart.enter().append('g')
         .attr('class', 'arc')
         .on('click', function (d) {
-            var url = '/' + slugg(d.desc) + '-' + contraFilters.source + '.html';
+            var suffix = (window._lang && window._lang !== 'en') ? '-' + window._lang : '';
+            var url = '/' + slugg(d.desc) + '-' + contraFilters.source + suffix + '.html';
             //var url = 'http://www.skepticsannotatedbible.com/contra/' + d.url;
 
             // Handle [cmd/ctrl]+click and middle click to open a new tab
