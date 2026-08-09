@@ -24,7 +24,6 @@ i18n.configure
 # it through `i18n.__` and using the currently set locale.
 translate = (text) ->
     text.replace /\{% trans %\}([^]*?)\{% endtrans %\}/gi, (match, p1) ->
-        #console.log "#{p1}: #{i18n.__(p1)}"
         i18n.__(p1)
 
 ###
@@ -185,7 +184,13 @@ module.exports = (env, done) ->
         # Disable cached templates because it could result in partials
         # in the wrong language... this means we are doing a bunch of
         # extra work, but I'm not sure how to easily fix this!
-        nenv.cache = {}
+        #
+        # NOTE: `nenv.cache` is NOT what Nunjucks actually checks in
+        # getTemplate() -- it reads `loader.cache` on each configured
+        # loader instead, so clearing `nenv.cache` was a no-op and the
+        # very first (locale, template) pair loaded stayed cached for
+        # the rest of the build. Clear the loaders' own caches instead.
+        loader.cache = {} for loader in nenv.loaders
 
         # Load i18n version of the template, ignoring any preloaded
         # templates in `templates` because we need to generate the
@@ -367,7 +372,7 @@ module.exports = (env, done) ->
                         title: contra.desc.trim().replace /"/g, '&quot;'
                         image: '/img/square.png'
                         filename: "#{slugg(contra.desc)}-#{name}#{suffix}.html"
-                        template: 'contradiction.html'
+                        template: "contradiction.html#{suffix}"
                         category: contraCategory
                         contra: contra
                         lang: lang
