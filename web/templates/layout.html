@@ -90,7 +90,7 @@
         <script>
             // Translation dictionary for client-side JavaScript (the
             // interactive D3 chart), since that content isn't rendered
-            // through the server-side {% trans %} templating system.
+            // through the server-side trans-tag templating system.
             {% if lang != 'en' %}
             window._i18n = {{ env.getTransTemplate(lang) | tojson | safe }};
             {% else %}
