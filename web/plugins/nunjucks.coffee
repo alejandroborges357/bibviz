@@ -146,6 +146,12 @@ module.exports = (env, done) ->
 
     nenv.addExtension 'MdTag', new MdTag()
 
+    # Expose a translation dictionary as a JSON string, for use by
+    # client-side JavaScript that needs to translate UI text that
+    # isn't rendered server-side (e.g. the interactive D3 chart).
+    nenv.addFilter 'tojson', (obj) ->
+        JSON.stringify(obj)
+
     nenv.addFilter 'langUrl', (url, langCode) ->
         if url[url.length - 1] is '/'
             if langCode isnt 'en'
@@ -237,7 +243,7 @@ module.exports = (env, done) ->
                 name = filepath.relative
                 page = MarkdownPage.fromFile filepath, (err, page) ->
                     page.metadata.filename = "#{env.utils.stripExtension(name)}-#{lang}.html"
-                    page.metadata.template = "#{page.metadata.template}-de"
+                    page.metadata.template = "#{page.metadata.template}-#{lang}"
                     rv["#{name}-#{lang}"] = page
 
                     done(err)

@@ -1,3 +1,12 @@
+// Translate a UI string using the dictionary injected by the server
+// (window._i18n), falling back to the original English string if no
+// translation is available. Used for chart/filter text that's
+// rendered client-side and can't go through the server-side
+// {% trans %} templating system.
+function t(str) {
+    return (window._i18n && window._i18n[str]) || str;
+}
+
 var bData = null;
 var bookToChapter = {};
 var bookToChapterCount = {};
@@ -409,9 +418,9 @@ function issueBarChart(selector, data) {
                 }
             })
             .on('mouseover', function (d, i) {
-                var testament = i >= 39 ? 'New Testament' : 'Old Testament';
+                var testament = t(i >= 39 ? 'New Testament' : 'Old Testament');
                 d3.select('#selected')
-                    .html(testament + ' - ' + d.name + ' - ' + d.verseCount + ' verses<br/><span class="subdued">' + d.refs.join(', ').substr(0, maxLength) + '</span>');
+                    .html(testament + ' - ' + d.name + ' - ' + d.verseCount + ' ' + t('verses') + '<br/><span class="subdued">' + d.refs.join(', ').substr(0, maxLength) + '</span>');
             });
 
     element.selectAll('text')
@@ -492,7 +501,8 @@ d3.json('/data/kjv.json', function (err, json) {
     for (var x = 0; x < json.sections.length; x++) {
         for (var y = 0; y < json.sections[x].books.length; y++) {
             bookSelect.append('option')
-                .text(json.sections[x].books[y].shortName);
+                .attr('value', json.sections[x].books[y].shortName)
+                .text(t(json.sections[x].books[y].shortName));
             bookToChapter[json.sections[x].books[y].shortName] = chapterCount;
             bookToChapterCount[json.sections[x].books[y].shortName] = 0;
             for (var z = 0; z < json.sections[x].books[y].chapters.length; z++) {
@@ -548,7 +558,7 @@ d3.json('/data/kjv.json', function (err, json) {
                 contraFilters.chapter = getAbsoluteChapter(d.book + ' ' + d.chapter.name.split(' ')[1]);
                 renderContra();*/
                 d3.select('#selected')
-                    .html(d.section + ' - ' + d.book + ' - ' + d.chapter.name + '<br/><span class="subdued">' + d.chapter.wordCount + ' words, ' + d.chapter.charCount + ' characters</span>');
+                    .html(t(d.section) + ' - ' + d.book + ' - ' + d.chapter.name + '<br/><span class="subdued">' + d.chapter.wordCount + ' ' + t('words') + ', ' + d.chapter.charCount + ' ' + t('characters') + '</span>');
             });
 
     if (window._contradictions !== undefined) {
@@ -585,7 +595,8 @@ d3.json('/data/kjv.json', function (err, json) {
     var typeSelect = d3.select('#type-select');
 
     typeSelect.selectAll('option').data(Object.keys(contraTypeFilters)).enter().append('option')
-        .text(function (d) {return d; });
+        .attr('value', function (d) {return d; })
+        .text(function (d) {return t(d); });
 
     typeSelect.on('change', function () {
         updateHash({type: this.value != 'All' ? this.value : null});
@@ -662,23 +673,23 @@ function createPie(selector, data, colors, text, hovers, url) {
 }
 
 createPie('#pCreation', [46, 54], ['crimson', 'steelblue'], '46%', [
-    'believe in young Earth creationism.',
-    'do not believe in young Earth creationism.'
+    t('believe in young Earth creationism.'),
+    t('do not believe in young Earth creationism.')
 ], 'http://www.gallup.com/poll/155003/hold-creationist-view-human-origins.aspx');
 createPie('#pCreationCollege', [25, 75], ['crimson', 'steelblue'], '25%', [
-    'of college graduates believe in young Earth creationism.',
-    'of college graduates do not believe in young Earth creationism.'
+    t('of college graduates believe in young Earth creationism.'),
+    t('of college graduates do not believe in young Earth creationism.')
 ], 'http://www.gallup.com/poll/155003/hold-creationist-view-human-origins.aspx');
 createPie('#pChristian', [51.9, 23.3, 2.1, 22.7], ['crimson', '#E02B50', '#E34363', 'steelblue'], '77%', [
-    'are Protestant/Other Christian',
-    'are Catholic',
-    'are Mormon',
-    'are not Christian'
+    t('are Protestant/Other Christian'),
+    t('are Catholic'),
+    t('are Mormon'),
+    t('are not Christian')
 ], 'http://www.gallup.com/poll/159548/identify-christian.aspx');
 createPie('#pReligious', [40, 29, 31], ['crimson', '#E02B50', 'steelblue'], '69%', [
-    'are very religious',
-    'are moderately religious',
-    'are not religious'
+    t('are very religious'),
+    t('are moderately religious'),
+    t('are not religious')
 ], 'http://www.gallup.com/poll/159050/seven-americans-moderately-religious.aspx');
 
 
