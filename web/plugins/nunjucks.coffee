@@ -364,14 +364,28 @@ module.exports = (env, done) ->
             
             return selected
 
+        # Build contradiction pages using the *English* description to
+        # slug the filename, for every locale. This keeps a single,
+        # stable base filename per contradiction across languages
+        # (e.g. 'foo-sab.html' / 'foo-sab-es.html'), matching what the
+        # client-side chart expects: it always loads the English
+        # /data/contra.json for its data (see main.js), so it only
+        # ever knows the English description when building a link.
+        enContradictions = env.getContra('en')
+
         generateContraPages = (lang, contradictions) ->
             suffix = if lang is 'en' then '' else "-#{lang}"
             for own name, contraCategory of contradictions
-                for contra in contraCategory.contradictions
+                enCategory = enContradictions[name]
+                for contra, i in contraCategory.contradictions
+                    enDesc = contra.desc
+                    if enCategory and enCategory.contradictions[i]
+                        enDesc = enCategory.contradictions[i].desc
+
                     meta =
                         title: contra.desc.trim().replace /"/g, '&quot;'
                         image: '/img/square.png'
-                        filename: "#{slugg(contra.desc)}-#{name}#{suffix}.html"
+                        filename: "#{slugg(enDesc)}-#{name}#{suffix}.html"
                         template: "contradiction.html#{suffix}"
                         category: contraCategory
                         contra: contra
